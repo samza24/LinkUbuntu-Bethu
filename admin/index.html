@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>LinkUbuntu — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+  <style>
+    .topbar{background:var(--red);}
+    .tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:16px;overflow-x:auto;}
+    .tab{padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--gray-mid);border-bottom:3px solid transparent;margin-bottom:-2px;font-family:'Ubuntu',sans-serif;white-space:nowrap;}
+    .tab.active{color:var(--red);border-bottom-color:var(--red);}
+    .tab-pane{display:none;} .tab-pane.active{display:block;}
+    .cit-card{background:white;border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;}
+    .fp-zone{background:#0D1B2A;border-radius:12px;padding:20px;text-align:center;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;margin-bottom:12px;}
+    .fp-label{color:#90CAF9;font-size:13px;}
+  </style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- LOCK -->
+<div id="lock" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FFF5F5;">
+  <div style="background:white;border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;max-width:320px;width:90%;text-align:center;box-shadow:var(--shadow);">
+    <div style="font-size:36px;margin-bottom:12px;">🔐</div>
+    <div style="font-size:18px;font-weight:700;color:var(--red);margin-bottom:4px;">Admin Panel</div>
+    <div style="font-size:12px;color:var(--gray-mid);margin-bottom:20px;">LinkUbuntu — authorised access only</div>
+    <div class="field-label">Admin PIN</div>
+    <input class="field-input" id="pin-inp" type="password" placeholder="Enter PIN" maxlength="6" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn btn-red" onclick="doLogin()">Enter</button>
+    <div style="margin-top:10px;font-size:11px;color:var(--gray-mid);">Default PIN: 123456</div>
+    <div style="margin-top:8px;"><a href="../" style="font-size:12px;color:var(--gray-mid);">← Back to home</a></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="app" style="display:none;">
+  <div class="topbar red">
+    <div style="flex:1;"><div class="topbar-title">LinkUbuntu Admin</div><div class="topbar-sub">MySQL Database</div></div>
+    <button class="back-btn" onclick="doLogout()">Sign out</button>
+  </div>
+  <div class="content" style="max-width:680px;">
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('citizens',this)">Citizens</button>
+      <button class="tab" onclick="switchTab('responders',this)">Responders</button>
+      <button class="tab" onclick="switchTab('logs',this)">Scan logs</button>
+    </div>
+    <div id="tab-citizens" class="tab-pane active"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font-size:15px;font-weight:700;">Registered citizens</div><button class="btn-sm btn-red" onclick="openCitModal(null)">+ Add citizen</button></div><div id="cit-list"><div class="spinner"></div></div></div>
+    <div id="tab-responders" class="tab-pane"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div style="font-size:15px;font-weight:700;">Authorised responders</div><button class="btn-sm btn-red" onclick="openRespModal()">+ Add responder</button></div><div id="resp-list"><div class="spinner"></div></div></div>
+    <div id="tab-logs" class="tab-pane"><div style="font-size:15px;font-weight:700;margin-bottom:14px;">Scan audit logs</div><div id="log-list"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- CITIZEN MODAL -->
+<div class="modal-overlay" id="cit-modal">
+  <div class="modal">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;" id="cit-modal-title">Add citizen</div>
+    <div style="display:flex;justify-content:center;margin-bottom:12px;"><div class="photo-upload-area" id="photo-prev" onclick="document.getElementById('photo-file').click()"><span>📷</span></div><input type="file" id="photo-file" accept="image/*" style="display:none;" onchange="prevPhoto(this)"/></div>
+    <div style="text-align:center;font-size:11px;color:var(--gray-mid);margin-bottom:14px;">Tap to upload photo</div>
+    <div class="field-label">SA ID number * (13 digits)</div>
+    <input class="field-input" id="c-id" placeholder="e.g. 9001015800082" maxlength="13" inputmode="numeric"/>
+    <div class="field-label">Full name *</div><input class="field-input" id="c-name" placeholder="Full name"/>
+    <div class="field-label">Phone number *</div><input class="field-input" id="c-phone" placeholder="e.g. 0821234567" inputmode="tel"/>
+    <div style="background:var(--gold-lt);border-radius:8px;padding:10px;margin-bottom:12px;font-size:11px;line-height:1.6;">Medical info is optional — in production this comes from Home Affairs</div>
+    <div class="field-label">Blood type</div>
+    <select class="field-input" id="c-blood"><option value="">Not specified</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+    <div class="field-label">Allergies</div><input class="field-input" id="c-allergy" placeholder="e.g. Penicillin, None"/>
+    <div class="field-label">Medical condition</div><input class="field-input" id="c-cond" placeholder="e.g. Diabetic, None"/>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-red" style="flex:1;" onclick="saveCitizen()">Save</button>
+      <button class="btn-outline" style="flex:1;margin-top:0;" onclick="closeModal('cit-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- FP MODAL -->
+<div class="modal-overlay" id="fp-modal">
+  <div class="modal">
+    <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Enrol fingerprint</div>
+    <div style="font-size:13px;color:var(--gray-mid);margin-bottom:14px;" id="fp-cit-name">—</div>
+    <div class="fp-zone" onclick="startEnrol()">
+      <div class="scan-ring"><div class="scan-inner">👆</div></div>
+      <div class="fp-label" id="fp-label">Tap to start fingerprint enrolment</div>
+    </div>
+    <div id="fp-status" style="font-size:12px;color:var(--gray-mid);text-align:center;min-height:18px;margin-bottom:10px;"></div>
+    <div id="fp-ok" style="display:none;" class="card"><div style="color:var(--green);font-weight:700;">✓ Fingerprint enrolled</div><div style="font-size:11px;color:var(--gray-mid);margin-top:4px;">Saved to MySQL. This citizen can now be identified by the responder app.</div></div>
+    <button class="btn-outline" onclick="closeFP()">Close</button>
+  </div>
+</div>
+
+<!-- RESPONDER MODAL -->
+<div class="modal-overlay" id="resp-modal">
+  <div class="modal">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px;">Add responder</div>
+    <div class="field-label">Employee / badge number *</div><input class="field-input" id="r-emp" placeholder="e.g. SAPS-20241891"/>
+    <div class="field-label">Full name *</div><input class="field-input" id="r-name" placeholder="Officer full name"/>
+    <div class="field-label">Role</div>
+    <select class="field-input" id="r-role"><option>SAPS Officer</option><option>Paramedic / EMS</option><option>Traffic Officer</option><option>Forensic Pathologist</option></select>
+    <div class="field-label">Contact phone</div><input class="field-input" id="r-phone" placeholder="Officer phone number"/>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-red" style="flex:1;" onclick="saveResp()">Save</button>
+      <button class="btn-outline" style="flex:1;margin-top:0;" onclick="closeModal('resp-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+let editID=null, photoFile=null, fpCitID=null;
+
+async function doLogin(){
+    const pin=document.getElementById('pin-inp').value;
+    const r=await verifyAdminPin(pin);
+    if(r.success){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';loadCitizens();}
+    else showToast('Wrong PIN','error');
+}
+function doLogout(){document.getElementById('lock').style.display='flex';document.getElementById('app').style.display='none';document.getElementById('pin-inp').value='';}
+document.getElementById('pin-inp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function switchTab(name,btn){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+name).classList.add('active');
+    if(name==='citizens')   loadCitizens();
+    if(name==='responders') loadResponders();
+    if(name==='logs')       loadLogs();
+}
+
+async function loadCitizens(){
+    const list=document.getElementById('cit-list');
+    list.innerHTML='<div class="spinner"></div>';
+    const r=await getAllCitizens();
+    if(!r.success){list.innerHTML='<div style="color:red;font-size:13px;">Error: '+r.error+'</div>';return;}
+    if(!r.data.length){list.innerHTML='<div class="hint" style="padding:24px;">No citizens yet. Click + Add citizen.</div>';return;}
+    list.innerHTML='';
+    r.data.forEach(c=>{
+        const card=document.createElement('div'); card.className='cit-card';
+        const av=c.photo_url?`<img src="${c.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(c.initials||'?');
+        card.innerHTML=`
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="avatar lg">${av}</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:700;">${c.full_name}</div>
+              <div style="font-size:11px;color:var(--gray-mid);">ID: ${c.id_number} · ${c.phone}</div>
+              <div style="font-size:11px;color:var(--gray-mid);margin-top:3px;">Blood: ${c.blood_type||'—'} · Allergy: ${c.allergies||'—'} · Cond: ${c.medical_condition||'—'}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+              <button class="btn-sm" style="background:var(--blue-lt);color:var(--blue);" onclick="openCitModal('${c.id_number}')">Edit</button>
+              <button class="btn-sm" style="background:var(--purple-lt);color:var(--purple);" onclick="openFP('${c.id_number}','${c.full_name}')">Enrol FP</button>
+              <button class="btn-sm" style="background:var(--red-lt);color:var(--red-dark);" onclick="delCit('${c.id_number}','${c.full_name}')">Delete</button>
+            </div>
+          </div>`;
+        list.appendChild(card);
+    });
+}
+
+async function openCitModal(id){
+    editID=id; photoFile=null;
+    document.getElementById('cit-modal-title').textContent=id?'Edit citizen':'Add citizen';
+    document.getElementById('photo-prev').innerHTML='<span>📷</span>';
+    ['c-id','c-name','c-phone','c-allergy','c-cond'].forEach(k=>document.getElementById(k).value='');
+    document.getElementById('c-blood').value='';
+    document.getElementById('c-id').readOnly=!!id;
+    if(id){
+        const r=await getCitizen(id);
+        if(r.success){
+            const c=r.data;
+            document.getElementById('c-id').value=c.id_number;
+            document.getElementById('c-name').value=c.full_name;
+            document.getElementById('c-phone').value=c.phone;
+            document.getElementById('c-blood').value=c.blood_type||'';
+            document.getElementById('c-allergy').value=c.allergies||'';
+            document.getElementById('c-cond').value=c.medical_condition||'';
+            if(c.photo_url) document.getElementById('photo-prev').innerHTML=`<img src="${c.photo_url}" style="width:100%;height:100%;object-fit:cover;">`;
+        }
+    }
+    openModal('cit-modal');
+}
+
+function prevPhoto(inp){
+    if(!inp.files[0])return; photoFile=inp.files[0];
+    const rd=new FileReader(); rd.onload=e=>document.getElementById('photo-prev').innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`; rd.readAsDataURL(photoFile);
+}
+
+async function saveCitizen(){
+    const id=document.getElementById('c-id').value.trim();
+    const nm=document.getElementById('c-name').value.trim();
+    const ph=document.getElementById('c-phone').value.trim();
+    if(id.length!==13){showToast('SA ID must be 13 digits','error');return;}
+    if(!nm){showToast('Name required','error');return;}
+    if(!ph){showToast('Phone required','error');return;}
+    const data={id_number:id,full_name:nm,phone:ph,
+        blood_type:document.getElementById('c-blood').value||null,
+        allergies:document.getElementById('c-allergy').value||null,
+        medical_condition:document.getElementById('c-cond').value||null};
+    const r=editID?await updateCitizen(editID,data):await addCitizen(data);
+    if(!r.success){showToast(r.error,'error');return;}
+    if(photoFile){showToast('Uploading photo...');await uploadCitizenPhoto(id,photoFile);}
+    showToast(editID?'Updated ✓':'Added ✓','success');
+    closeModal('cit-modal'); loadCitizens();
+}
+
+async function delCit(id,name){
+    if(!confirm('Delete '+name+'? This removes all their contacts and fingerprint.'))return;
+    await deleteCitizenById(id); showToast('Deleted','success'); loadCitizens();
+}
+
+function openFP(id,name){
+    fpCitID=id;
+    document.getElementById('fp-cit-name').textContent='Citizen: '+name;
+    document.getElementById('fp-label').textContent='Tap to start fingerprint enrolment';
+    document.getElementById('fp-status').textContent='';
+    document.getElementById('fp-ok').style.display='none';
+    openModal('fp-modal');
+}
+
+async function startEnrol(){
+    document.getElementById('fp-label').textContent='Waiting for fingerprint...';
+    document.getElementById('fp-status').textContent='Place finger on device sensor when prompted';
+    try{
+        const r=await enrolFingerprint(fpCitID);
+        if(r.success){document.getElementById('fp-label').textContent='✓ Done';document.getElementById('fp-ok').style.display='block';document.getElementById('fp-status').textContent='';showToast('Fingerprint enrolled ✓','success');loadCitizens();}
+        else{document.getElementById('fp-status').textContent='Error: '+r.error;document.getElementById('fp-label').textContent='Tap to try again';}
+    }catch(e){document.getElementById('fp-status').textContent='Error: '+e.message;document.getElementById('fp-label').textContent='Tap to try again';showToast(e.message,'error');}
+}
+function closeFP(){closeModal('fp-modal');}
+
+async function loadResponders(){
+    const list=document.getElementById('resp-list'); list.innerHTML='<div class="spinner"></div>';
+    const r=await getAllResponders();
+    if(!r.success||!r.data.length){list.innerHTML='<div class="hint" style="padding:24px;">No responders yet.</div>';return;}
+    list.innerHTML='';
+    r.data.forEach(resp=>{
+        const card=document.createElement('div'); card.className='card';
+        card.innerHTML=`<div style="display:flex;align-items:center;gap:12px;"><div class="avatar" style="background:var(--purple-lt);color:var(--purple);">${resp.full_name.substring(0,2).toUpperCase()}</div><div style="flex:1;"><div style="font-size:14px;font-weight:700;">${resp.full_name}</div><div style="font-size:11px;color:var(--gray-mid);">${resp.role} · ${resp.employee_number} · ${resp.phone||'—'}</div></div><button class="btn-sm" style="background:var(--red-lt);color:var(--red-dark);" onclick="delResp('${resp.employee_number}','${resp.full_name}')">Remove</button></div>`;
+        list.appendChild(card);
+    });
+}
+function openRespModal(){openModal('resp-modal');}
+async function saveResp(){
+    const emp=document.getElementById('r-emp').value.trim(), nm=document.getElementById('r-name').value.trim();
+    if(!emp||!nm){showToast('Employee number and name required','error');return;}
+    const r=await addResponder({employee_number:emp,full_name:nm,role:document.getElementById('r-role').value,phone:document.getElementById('r-phone').value.trim()});
+    if(!r.success){showToast(r.error,'error');return;}
+    showToast('Responder added ✓','success'); closeModal('resp-modal'); loadResponders();
+}
+async function delResp(id,name){
+    if(!confirm('Remove '+name+'?'))return;
+    await deleteResponder(id); showToast('Removed','success'); loadResponders();
+}
+
+async function loadLogs(){
+    const list=document.getElementById('log-list'); list.innerHTML='<div class="spinner"></div>';
+    const r=await getScanLogs();
+    if(!r.success||!r.data.length){list.innerHTML='<div class="hint" style="padding:24px;">No scans yet.</div>';return;}
+    list.innerHTML='';
+    r.data.forEach(log=>{
+        const card=document.createElement('div'); card.className='card'; card.style.fontSize='12px';
+        const ts=log.scanned_at?new Date(log.scanned_at).toLocaleString('en-ZA'):'—';
+        card.innerHTML=`<div style="font-weight:700;margin-bottom:6px;">${log.citizen_name||'Unknown'} <span class="tag tag-green">${log.match_method||'WebAuthn'}</span></div><div style="color:var(--gray-mid);line-height:1.9;">Responder: ${log.responder_name||'—'} (${log.responder_role||'—'})<br/>Time: ${ts}<br/>GPS: ${log.gps_location||'—'}<br/>Contacts notified: ${log.contacts_notified||0}${log.message_sent?'<br/>Message: '+log.message_sent:''}</div>`;
+        list.appendChild(card);
+    });
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+</script>
+</body>
+</html>
