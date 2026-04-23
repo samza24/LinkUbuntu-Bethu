@@ -10,7 +10,7 @@
     Replace YOUR-SITE with your actual InfinityFree subdomain.
 */
 
-const API_BASE = 'https://linkubuntu.ct.ws/linkubuntu-api'; // CHANGE THIS
+const API_BASE = 'https://linkubuntu.kesug.com/linkubuntu-api'; // CHANGE THIS
 
 async function api(method, path, body=null){
     const opts={method,headers:{'Content-Type':'application/json'}};
