@@ -1,18 +1,11 @@
 /*
-  FILE: js/api.js
-  Central API layer for LinkUbuntu.
-
-  CORS NOTE: InfinityFree / Cloudflare blocks cross-origin preflight requests.
-  All API calls are routed through corsproxy.io to work around this.
-  When you move to a proper server, remove CORS_PROXY and update API_BASE only.
-
-  Change API_BASE to match your hosting:
-    LOCAL XAMPP:  https://localhost/linkubuntu-api  (no proxy needed)
-    INFINITYFREE: keep as-is below
+  FILE: js/api.js  — v4
+  Uses allorigins.win proxy which returns clean uncompressed JSON.
+  When moving to a real server, remove CORS_PROXY and the proxied() function.
 */
 
 const API_BASE   = 'https://linkubuntu.kesug.com/linkubuntu-api';
-const CORS_PROXY = 'https://corsproxy.io/?'; // Remove this when on a real server
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 function proxied(url) {
     return CORS_PROXY + encodeURIComponent(url);
@@ -22,8 +15,14 @@ async function api(method, path, body = null) {
     const opts = { method, headers: { 'Content-Type': 'text/plain' } };
     if (body) opts.body = JSON.stringify(body);
     try {
-        const r = await fetch(proxied(API_BASE + path), opts);
-        return await r.json();
+        const r    = await fetch(proxied(API_BASE + path), opts);
+        const text = await r.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Bad response:', text.substring(0, 300));
+            return { success: false, error: 'Server returned invalid response' };
+        }
     } catch (e) {
         console.error('API error', e);
         return { success: false, error: e.message };
@@ -32,8 +31,9 @@ async function api(method, path, body = null) {
 
 async function apiForm(path, fd) {
     try {
-        const r = await fetch(proxied(API_BASE + path), { method: 'POST', body: fd });
-        return await r.json();
+        const r    = await fetch(proxied(API_BASE + path), { method: 'POST', body: fd });
+        const text = await r.text();
+        try { return JSON.parse(text); } catch (e) { return { success: false, error: 'Invalid response' }; }
     } catch (e) {
         return { success: false, error: e.message };
     }
