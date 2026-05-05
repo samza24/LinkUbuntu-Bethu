@@ -20,19 +20,19 @@
 <div id="toast"></div>
 
 <!-- LOCK -->
-<div id="lock" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FFF5F5;">
-  <div style="background:white;border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;max-width:320px;width:90%;text-align:center;box-shadow:var(--shadow);">
-    <div style="font-size:36px;margin-bottom:12px;">🔐</div>
-    <div style="font-size:18px;font-weight:700;color:var(--red);margin-bottom:4px;">Admin Panel</div>
-    <div style="font-size:12px;color:var(--gray-mid);margin-bottom:20px;">LinkUbuntu — authorised access only</div>
-    <div class="field-label">Admin PIN</div>
-    <input class="field-input" id="pin-inp" type="password" placeholder="Enter PIN" maxlength="6" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="btn btn-red" onclick="doLogin()">Enter</button>
-    <div style="margin-top:10px;font-size:11px;color:var(--gray-mid);">Default PIN: 123456</div>
-    <div style="margin-top:8px;"><a href="../" style="font-size:12px;color:var(--gray-mid);">← Back to home</a></div>
+<div class="screen active" id="admin-login">
+  <div class="content">
+    <h2>🔐 Admin Login</h2>
+    <p>LinkUbuntu — authorised access only</p>
+    
+    <input type="text" id="admin-username" class="field-input" placeholder="Username (default: admin)" value="admin">
+    <input type="password" id="admin-pin" class="field-input" placeholder="PIN / Password" value="123456">
+    
+    <button class="btn btn-blue" onclick="loginAdmin()">Enter</button>
+    <p class="hint">Default: admin / 123456</p>
   </div>
 </div>
-
+  
 <!-- MAIN -->
 <div id="app" style="display:none;">
   <div class="topbar red">
