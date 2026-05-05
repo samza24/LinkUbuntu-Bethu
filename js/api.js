@@ -1,28 +1,38 @@
 /*
   FILE: js/api.js
   Central API layer for LinkUbuntu.
-  Change API_BASE to match your hosting URL before deploying.
 
-  LOCAL XAMPP:  const API_BASE = 'http://localhost/linkubuntu-api';
-  INFINITYFREE: const API_BASE = 'https://YOUR-SITE.infinityfreeapp.com/linkubuntu-api';
+  CORS NOTE: InfinityFree / Cloudflare blocks cross-origin preflight requests.
+  All API calls are routed through corsproxy.io to work around this.
+  When you move to a proper server, remove CORS_PROXY and update API_BASE only.
+
+  Change API_BASE to match your hosting:
+    LOCAL XAMPP:  https://localhost/linkubuntu-api  (no proxy needed)
+    INFINITYFREE: keep as-is below
 */
 
-const API_BASE = 'https://linkubuntu.kesug.com/linkubuntu-api';
+const API_BASE   = 'https://linkubuntu.kesug.com/linkubuntu-api';
+const CORS_PROXY = 'https://corsproxy.io/?'; // Remove this when on a real server
+
+function proxied(url) {
+    return CORS_PROXY + encodeURIComponent(url);
+}
 
 async function api(method, path, body = null) {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    const opts = { method, headers: { 'Content-Type': 'text/plain' } };
     if (body) opts.body = JSON.stringify(body);
     try {
-        const r = await fetch(API_BASE + path, opts);
+        const r = await fetch(proxied(API_BASE + path), opts);
         return await r.json();
     } catch (e) {
         console.error('API error', e);
         return { success: false, error: e.message };
     }
 }
+
 async function apiForm(path, fd) {
     try {
-        const r = await fetch(API_BASE + path, { method: 'POST', body: fd });
+        const r = await fetch(proxied(API_BASE + path), { method: 'POST', body: fd });
         return await r.json();
     } catch (e) {
         return { success: false, error: e.message };
@@ -44,12 +54,12 @@ async function uploadCitizenPhoto(id, file) {
 }
 
 // ── CONTACTS ──────────────────────────────────────────────────────────────────
-const getContacts      = cid      => api('GET',    `/contacts.php?citizen_id=${cid}`);
-const addContactAPI    = (cid, d) => api('POST',   '/contacts.php', { ...d, citizen_id: cid });
-const removeContactAPI = id       => api('DELETE', `/contacts.php?id=${id}`);
+const getContacts      = cid       => api('GET',    `/contacts.php?citizen_id=${cid}`);
+const addContactAPI    = (cid, d)  => api('POST',   '/contacts.php', { ...d, citizen_id: cid });
+const removeContactAPI = id        => api('DELETE', `/contacts.php?id=${id}`);
 
 // ── OTP ───────────────────────────────────────────────────────────────────────
-const sendOTPAPI   = phone        => api('POST', '/otp.php?action=send',   { phone });
+const sendOTPAPI   = phone         => api('POST', '/otp.php?action=send',   { phone });
 const verifyOTPAPI = (phone, code) => api('POST', '/otp.php?action=verify', { phone, code });
 
 // ── WEBAUTHN ──────────────────────────────────────────────────────────────────
@@ -72,7 +82,7 @@ async function enrolFingerprint(citizenId) {
         public_key: {
             id: cred.id, rawId: buf2b64(cred.rawId),
             response: {
-                clientDataJSON:   buf2b64(cred.response.clientDataJSON),
+                clientDataJSON:    buf2b64(cred.response.clientDataJSON),
                 attestationObject: buf2b64(cred.response.attestationObject)
             },
             type: cred.type
@@ -106,17 +116,15 @@ const addResponder    = d     => api('POST',   '/responders.php', d);
 const deleteResponder = id    => api('DELETE', `/responders.php?id=${encodeURIComponent(id)}`);
 
 // ── SMS ───────────────────────────────────────────────────────────────────────
-const sendSMSAPI     = (ph, msg)        => api('POST', '/sms.php?action=send',  { phone: ph, message: msg });
-const sendBulkSMSAPI = (contacts, msg)  => api('POST', '/sms.php?action=bulk',  { contacts, message: msg });
-// Demo SMS — sends a random code to a registered citizen's phone (admin panel feature)
-const sendDemoSMSAPI = (phone, name)    => api('POST', '/sms.php?action=demo',  { phone, name });
+const sendSMSAPI     = (ph, msg)       => api('POST', '/sms.php?action=send', { phone: ph, message: msg });
+const sendBulkSMSAPI = (contacts, msg) => api('POST', '/sms.php?action=bulk', { contacts, message: msg });
+const sendDemoSMSAPI = (phone, name)   => api('POST', '/sms.php?action=demo', { phone, name });
 
 // ── SCAN LOG ──────────────────────────────────────────────────────────────────
 const saveScanLog = d  => api('POST', '/scan_log.php', d);
 const getScanLogs = () => api('GET',  '/scan_log.php');
 
 // ── ADMIN AUTH ────────────────────────────────────────────────────────────────
-// Sends username + pin to admin.php. Default: admin / 123456
 const verifyAdminPin = (username, pin) => api('POST', '/admin.php', { username, pin });
 
 // ── BASE64URL HELPERS ─────────────────────────────────────────────────────────
