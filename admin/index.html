@@ -267,5 +267,28 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 </script>
+
+  <script>
+async function loginAdmin() {
+    const username = document.getElementById('admin-username').value.trim();
+    const pin = document.getElementById('admin-pin').value.trim();
+
+    if (!username || !pin) {
+        showToast('Username and PIN required', 'error');
+        return;
+    }
+
+    const res = await verifyAdminPin({username, pin});
+    
+    if (res.success) {
+        showToast('Login successful!', 'success');
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('dashboard-screen').classList.add('active'); // adjust ID if needed
+    } else {
+        showToast(res.error || 'Login failed', 'error');
+    }
+}
+</script>
+  
 </body>
 </html>
