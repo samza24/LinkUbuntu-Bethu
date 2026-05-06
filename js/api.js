@@ -122,8 +122,7 @@ const saveScanLog = d  => api('POST', '/scan_log.php', d);
 const getScanLogs = () => api('GET',  '/scan_log.php');
 
 // ── ADMIN AUTH ────────────────────────────────────────────────────────────────
-const verifyAdminPin = (username, pin) => api('POST', '/admin.php', { username, pin });
-
+const verifyAdminPin = (data) => api('POST', '/admin.php', data);
 // ── BASE64URL HELPERS ─────────────────────────────────────────────────────────
 function b64url(str) {
     const b64 = str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice(0, (4 - str.length % 4) % 4);
