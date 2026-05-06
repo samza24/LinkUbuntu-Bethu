@@ -1,28 +1,20 @@
 /*
-  FILE: js/api.js
-  Central API layer for LinkUbuntu.
-
-  ╔══════════════════════════════════════════════════════════════════╗
-  ║  IMPORTANT — UPDATE THIS URL EACH TIME YOU START NGROK          ║
-  ║                                                                  ║
-  ║  1. Start your backend (XAMPP) on your laptop                   ║
-  ║  2. Run:  ngrok http 80                                          ║
-  ║  3. Copy the https URL shown (e.g. https://abc123.ngrok-free.app)║
-  ║  4. Replace the API_BASE value below with that URL + /linkubuntu-api
-  ║  5. Commit & push to GitHub                                      ║
-  ╚══════════════════════════════════════════════════════════════════╝
-
-  For purely LOCAL testing (both frontend and backend on same machine):
-  const API_BASE = 'http://localhost/linkubuntu-api';
+  FILE: js/api.js  — LinkUbuntu
+  Update API_BASE with your ngrok URL each time you restart ngrok.
 */
 
-const API_BASE = 'https://76f7-102-129-61-47.ngrok-free.app/linkubuntu-api';
-// ↑ Replace with your real ngrok URL before pushing to GitHub
+const API_BASE = 'https://YOUR-NGROK-URL.ngrok-free.app/linkubuntu-api';
+// ↑ Replace with your actual ngrok URL before pushing to GitHub
+
+// ngrok intercepts browser requests and shows an HTML warning page unless
+// this header is present. Without it the POST returns HTML (not JSON) and
+// the browser reports it as a CORS error.
+const NGROK_SKIP = { 'ngrok-skip-browser-warning': '1' };
 
 async function api(method, path, body = null) {
     const opts = {
         method,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json', ...NGROK_SKIP }
     };
     if (body) opts.body = JSON.stringify(body);
     try {
@@ -36,7 +28,8 @@ async function api(method, path, body = null) {
 
 async function apiForm(path, fd) {
     try {
-        const r = await fetch(API_BASE + path, { method: 'POST', body: fd });
+        // Do NOT set Content-Type for FormData — browser sets it with the multipart boundary
+        const r = await fetch(API_BASE + path, { method: 'POST', body: fd, headers: { ...NGROK_SKIP } });
         return await r.json();
     } catch (e) {
         return { success: false, error: e.message };
@@ -50,7 +43,6 @@ const addCitizen        = d       => api('POST',   '/citizen.php', d);
 const updateCitizen     = (id, d) => api('PUT',    `/citizen.php?id=${id}`, d);
 const deleteCitizenById = id      => api('DELETE', `/citizen.php?id=${id}`);
 const updateMedical     = (id, d) => api('POST',   `/medical.php?id=${id}`, d);
-
 async function uploadCitizenPhoto(id, file) {
     const fd = new FormData();
     fd.append('photo', file);
