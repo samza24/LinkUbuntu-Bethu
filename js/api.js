@@ -1,28 +1,33 @@
 /*
-  FILE: js/api.js  — v4
-  Uses allorigins.win proxy which returns clean uncompressed JSON.
-  When moving to a real server, remove CORS_PROXY and the proxied() function.
+  FILE: js/api.js
+  Central API layer for LinkUbuntu.
+
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  IMPORTANT — UPDATE THIS URL EACH TIME YOU START NGROK          ║
+  ║                                                                  ║
+  ║  1. Start your backend (XAMPP) on your laptop                   ║
+  ║  2. Run:  ngrok http 80                                          ║
+  ║  3. Copy the https URL shown (e.g. https://abc123.ngrok-free.app)║
+  ║  4. Replace the API_BASE value below with that URL + /linkubuntu-api
+  ║  5. Commit & push to GitHub                                      ║
+  ╚══════════════════════════════════════════════════════════════════╝
+
+  For purely LOCAL testing (both frontend and backend on same machine):
+  const API_BASE = 'http://localhost/linkubuntu-api';
 */
 
-const API_BASE   = 'https://linkubuntu.kesug.com/linkubuntu-api';
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-
-function proxied(url) {
-    return CORS_PROXY + encodeURIComponent(url);
-}
+const API_BASE = 'https://YOUR-NGROK-URL.ngrok-free.app/linkubuntu-api';
+// ↑ Replace with your real ngrok URL before pushing to GitHub
 
 async function api(method, path, body = null) {
-    const opts = { method, headers: { 'Content-Type': 'text/plain' } };
+    const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+    };
     if (body) opts.body = JSON.stringify(body);
     try {
-        const r    = await fetch(proxied(API_BASE + path), opts);
-        const text = await r.text();
-        try {
-            return JSON.parse(text);
-        } catch (e) {
-            console.error('Bad response:', text.substring(0, 300));
-            return { success: false, error: 'Server returned invalid response' };
-        }
+        const r = await fetch(API_BASE + path, opts);
+        return await r.json();
     } catch (e) {
         console.error('API error', e);
         return { success: false, error: e.message };
@@ -31,9 +36,8 @@ async function api(method, path, body = null) {
 
 async function apiForm(path, fd) {
     try {
-        const r    = await fetch(proxied(API_BASE + path), { method: 'POST', body: fd });
-        const text = await r.text();
-        try { return JSON.parse(text); } catch (e) { return { success: false, error: 'Invalid response' }; }
+        const r = await fetch(API_BASE + path, { method: 'POST', body: fd });
+        return await r.json();
     } catch (e) {
         return { success: false, error: e.message };
     }
@@ -46,6 +50,7 @@ const addCitizen        = d       => api('POST',   '/citizen.php', d);
 const updateCitizen     = (id, d) => api('PUT',    `/citizen.php?id=${id}`, d);
 const deleteCitizenById = id      => api('DELETE', `/citizen.php?id=${id}`);
 const updateMedical     = (id, d) => api('POST',   `/medical.php?id=${id}`, d);
+
 async function uploadCitizenPhoto(id, file) {
     const fd = new FormData();
     fd.append('photo', file);
@@ -54,9 +59,9 @@ async function uploadCitizenPhoto(id, file) {
 }
 
 // ── CONTACTS ──────────────────────────────────────────────────────────────────
-const getContacts      = cid       => api('GET',    `/contacts.php?citizen_id=${cid}`);
-const addContactAPI    = (cid, d)  => api('POST',   '/contacts.php', { ...d, citizen_id: cid });
-const removeContactAPI = id        => api('DELETE', `/contacts.php?id=${id}`);
+const getContacts      = cid      => api('GET',    `/contacts.php?citizen_id=${cid}`);
+const addContactAPI    = (cid, d) => api('POST',   '/contacts.php', { ...d, citizen_id: cid });
+const removeContactAPI = id       => api('DELETE', `/contacts.php?id=${id}`);
 
 // ── OTP ───────────────────────────────────────────────────────────────────────
 const sendOTPAPI   = phone         => api('POST', '/otp.php?action=send',   { phone });
@@ -116,9 +121,9 @@ const addResponder    = d     => api('POST',   '/responders.php', d);
 const deleteResponder = id    => api('DELETE', `/responders.php?id=${encodeURIComponent(id)}`);
 
 // ── SMS ───────────────────────────────────────────────────────────────────────
-const sendSMSAPI     = (ph, msg)       => api('POST', '/sms.php?action=send', { phone: ph, message: msg });
-const sendBulkSMSAPI = (contacts, msg) => api('POST', '/sms.php?action=bulk', { contacts, message: msg });
-const sendDemoSMSAPI = (phone, name)   => api('POST', '/sms.php?action=demo', { phone, name });
+const sendSMSAPI     = (ph, msg)       => api('POST', '/sms.php?action=send',  { phone: ph, message: msg });
+const sendBulkSMSAPI = (contacts, msg) => api('POST', '/sms.php?action=bulk',  { contacts, message: msg });
+const sendDemoSMSAPI = (phone, name)   => api('POST', '/sms.php?action=demo',  { phone, name });
 
 // ── SCAN LOG ──────────────────────────────────────────────────────────────────
 const saveScanLog = d  => api('POST', '/scan_log.php', d);
