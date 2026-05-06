@@ -3,7 +3,7 @@
   Update API_BASE with your ngrok URL each time you restart ngrok.
 */
 
-const API_BASE = 'https://5e01-102-129-61-47.ngrok-free.app/linkubuntu-api';
+const API_BASE = 'https://4c76-102-129-61-47.ngrok-free.app/linkubuntu-api';
 // ↑ Replace with your actual ngrok URL before pushing to GitHub
 
 // ngrok intercepts browser requests and shows an HTML warning page unless
