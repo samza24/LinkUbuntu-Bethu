@@ -197,7 +197,7 @@ async function loginAdmin() {
   if (!username || !pin) { showToast('Username and PIN required', 'error'); return; }
 
   showToast('Checking credentials...');
-  const res = await verifyAdminPin(username, pin);
+  const res = await verifyAdminPin({username, pin});
 
   if (res.success) {
     showToast('Welcome, ' + (res.admin?.name || username) + ' ✓', 'success');
