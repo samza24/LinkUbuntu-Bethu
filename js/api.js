@@ -16,7 +16,7 @@
   const API_BASE = 'http://localhost/linkubuntu-api';
 */
 
-const API_BASE = 'https://YOUR-NGROK-URL.ngrok-free.app/linkubuntu-api';
+const API_BASE = ' https://54a6-102-129-61-47.ngrok-free.app/linkubuntu-api';
 // ↑ Replace with your real ngrok URL before pushing to GitHub
 
 async function api(method, path, body = null) {
